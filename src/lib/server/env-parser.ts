@@ -49,6 +49,48 @@ export const parseEnv = (content: string): Record<string, string> => {
 };
 
 /**
+ * Parse a .env.example file for group definitions.
+ * Groups are delimited by `# GROUP: <name>` comment lines.
+ * Every KEY= line following a GROUP marker (until the next marker) belongs to that group.
+ */
+export const parseEnvGroups = (
+	content: string
+): Array<{ id: string; name: string; keys: string[]; collapsed: false }> => {
+	const groups: Array<{ id: string; name: string; keys: string[]; collapsed: false }> = [];
+	let current: { name: string; keys: string[] } | null = null;
+
+	const flush = () => {
+		if (current && current.keys.length > 0) {
+			groups.push({
+				id: current.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+				name: current.name,
+				keys: current.keys,
+				collapsed: false
+			});
+		}
+	};
+
+	for (const rawLine of content.split('\n')) {
+		const line = rawLine.trim();
+		const groupMatch = line.match(/^#\s*GROUP:\s*(.+)$/);
+		if (groupMatch) {
+			flush();
+			current = { name: groupMatch[1].trim(), keys: [] };
+			continue;
+		}
+		if (!line || line.startsWith('#') || !current) continue;
+		const stripped = line.startsWith('export ') ? line.slice(7) : line;
+		const eqIndex = stripped.indexOf('=');
+		if (eqIndex === -1) continue;
+		const key = stripped.slice(0, eqIndex).trim();
+		if (key) current.keys.push(key);
+	}
+
+	flush();
+	return groups;
+};
+
+/**
  * Serialize a key-value record back into .env file format,
  * preserving existing lines (comments, blank lines, ordering).
  * Handles updating an existing key or appending a new one.

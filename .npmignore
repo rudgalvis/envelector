@@ -1,0 +1,2 @@
+# Strip source maps — keeps package lean, source stays private
+**/*.map

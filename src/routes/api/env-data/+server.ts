@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import fs from 'fs';
 import path from 'path';
-import { parseEnv } from '$lib/server/env-parser';
+import { parseEnv, parseEnvGroups } from '$lib/server/env-parser';
 import type { EnvData, EnvSource } from '$lib/types';
 import type { RequestHandler } from './$types';
 
@@ -71,11 +71,23 @@ export const POST: RequestHandler = async ({ request }) => {
 		for (const k of Object.keys(src.values)) keySet.add(k);
 	}
 
+	// Parse groups from .env.example in the same directory
+	const examplePath = path.join(dir, '.env.example');
+	let groups: EnvData['groups'] = [];
+	if (fs.existsSync(examplePath)) {
+		try {
+			groups = parseEnvGroups(fs.readFileSync(examplePath, 'utf-8'));
+		} catch {
+			// unreadable example — no groups
+		}
+	}
+
 	const envData: EnvData = {
 		targetPath: resolved,
 		target,
 		sources,
-		allKeys: [...keySet]
+		allKeys: [...keySet],
+		groups
 	};
 
 	return json(envData);

@@ -1,47 +1,25 @@
 #!/usr/bin/env node
-import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { existsSync } from 'node:fs';
+import { exec } from 'node:child_process';
+import { platform } from 'node:os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const buildIndex = join(__dirname, '..', 'build', 'index.js');
+const buildDir = join(__dirname, '..', 'build');
 
-if (!existsSync(buildIndex)) {
-	console.error('\n  envelector: build not found.');
-	console.error('  Run `pnpm build` (or `npm run build`) inside the package first.\n');
-	process.exit(1);
-}
+process.env.PORT ??= '4747';
+process.env.HOST ??= 'localhost';
 
-const PORT = process.env.PORT ?? '4747';
-const HOST = process.env.HOST ?? 'localhost';
+const port = process.env.PORT;
+const host = process.env.HOST;
+const url = `http://${host}:${port}`;
 
-const server = spawn(process.execPath, [buildIndex], {
-	env: { ...process.env, PORT, HOST },
-	stdio: 'inherit'
-});
+await import(join(buildDir, 'index.js'));
 
-server.on('error', (err) => {
-	console.error('Failed to start server:', err.message);
-	process.exit(1);
-});
+const openCmd = platform() === 'darwin' ? 'open' : platform() === 'win32' ? 'start' : 'xdg-open';
 
-server.on('exit', (code) => process.exit(code ?? 0));
-
-// Open the browser after giving the server a moment to bind
 setTimeout(() => {
-	const url = `http://${HOST}:${PORT}`;
-	console.log(`\n  envelector  →  ${url}\n`);
-
-	const opener =
-		process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
-
-	spawn(opener, [url], { detached: true, stdio: 'ignore' }).unref();
-}, 800);
-
-process.on('SIGINT', () => {
-	server.kill('SIGINT');
-});
-process.on('SIGTERM', () => {
-	server.kill('SIGTERM');
-});
+	exec(`${openCmd} ${url}`, (err) => {
+		if (err) console.error('Could not open browser automatically. Visit:', url);
+	});
+}, 500);

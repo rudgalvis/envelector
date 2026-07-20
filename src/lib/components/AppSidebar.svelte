@@ -14,8 +14,9 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import FileTree from '$lib/components/FileTree.svelte';
+	import FolderPicker from '$lib/components/FolderPicker.svelte';
 	import type { FileNode } from '$lib/types';
-	import { FolderSearch, Loader2 } from '@lucide/svelte';
+	import { FolderOpen, FolderSearch, Loader2 } from '@lucide/svelte';
 	import { initTreeState } from '$lib/stores/tree-state.svelte';
 
 	type Props = {
@@ -31,6 +32,7 @@
 	let tree = $state<FileNode | null>(null);
 	let loading = $state(false);
 	let error = $state<string | null>(null);
+	let pickerOpen = $state(false);
 
 	const scan = async () => {
 		const trimmed = rootPath.trim();
@@ -71,6 +73,11 @@
 		if (e.key === 'Enter') scan();
 	};
 
+	const handlePickerSelect = (path: string) => {
+		rootPath = path;
+		scan();
+	};
+
 	onMount(() => {
 		initTreeState();
 		const stored = localStorage.getItem(STORAGE_KEY);
@@ -88,12 +95,25 @@
 			<span class="text-sm font-semibold">Envelector</span>
 		</div>
 		<p class="mb-2 text-xs text-muted-foreground">Enter a directory path to discover .env files</p>
-		<Input
-			bind:value={rootPath}
-			onkeydown={handleKeydown}
-			placeholder="/path/to/your/project"
-			class="h-8 text-xs font-mono"
-		/>
+		<div class="flex items-center gap-1.5">
+			<Input
+				bind:value={rootPath}
+				onkeydown={handleKeydown}
+				placeholder="/path/to/your/project"
+				class="h-8 flex-1 text-xs font-mono"
+			/>
+			<Button
+				type="button"
+				variant="outline"
+				size="icon"
+				class="size-8 shrink-0"
+				onclick={() => (pickerOpen = true)}
+				title="Browse folders"
+			>
+				<FolderOpen class="size-3.5" />
+				<span class="sr-only">Browse folders</span>
+			</Button>
+		</div>
 		<Button onclick={scan} disabled={loading || !rootPath.trim()} size="sm" class="mt-1.5 w-full">
 			{#if loading}
 				<Loader2 class="mr-1.5 size-3.5 animate-spin" />
@@ -131,6 +151,12 @@
 			</SidebarGroupContent>
 		</SidebarGroup>
 	</SidebarContent>
+
+	<FolderPicker
+		bind:open={pickerOpen}
+		initialPath={rootPath.trim() || null}
+		onSelect={handlePickerSelect}
+	/>
 
 	<SidebarFooter class="px-3 py-2">
 		<p class="text-[10px] text-muted-foreground">

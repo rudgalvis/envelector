@@ -33,13 +33,21 @@
 
 	const isSelected = $derived(selectedPath === node.path);
 
+	const isSelectedFolder = $derived(
+		node.type === 'directory' &&
+			selectedPath !== null &&
+			selectedPath.slice(0, selectedPath.lastIndexOf('/')) === node.path
+	);
+
 </script>
 
 {#if node.type === 'directory'}
 	<div>
 		<button
 			onclick={toggle}
-			class="flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+			class="flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground {isSelectedFolder
+				? 'bg-sidebar-accent/50 text-sidebar-accent-foreground'
+				: ''}"
 			style="padding-left: {depth * 16 + 8}px"
 		>
 			{#if open}

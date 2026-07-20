@@ -17,4 +17,12 @@ export type EnvData = {
 	target: Record<string, string>;
 	sources: EnvSource[];
 	allKeys: string[];
+	groups: KeyGroup[];
+};
+
+export type KeyGroup = {
+	id: string;
+	name: string;
+	keys: string[];
+	collapsed: boolean;
 };

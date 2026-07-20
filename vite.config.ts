@@ -4,6 +4,9 @@ import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
+	build: {
+		sourcemap: false
+	},
 	ssr: {
 		noExternal: ['bits-ui', '@internationalized/date', 'svelte-sonner']
 	},
